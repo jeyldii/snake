@@ -17,9 +17,9 @@ fn main() {
     let mut snake = Snake::new(Position { x: 4, y: 12 }, Position { x: 4 - 1, y: 12 });
     board.set_rabbit(10, 5);
 
-    let head = snake.get_head();
-    let tail = snake.get_tail();
-    board.set_snake((head.x, head.y), (tail.x, tail.y));
+    // let head = snake.get_head();
+    // let tail = snake.get_tail();
+    board.set_snake(&snake);
 
 
     let mut game = game::Game::new(&mut board, &mut snake);

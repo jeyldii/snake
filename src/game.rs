@@ -1,12 +1,14 @@
 use std::cmp::PartialEq;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::{os, time};
+use std::ops::DerefMut;
+use std::sync::{Arc, Mutex, MutexGuard};
 use termion::cursor::DetectCursorPos;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use rand::{Rng, thread_rng};
-
+use termion::async_stdin;
 use crate::board::Board;
 use crate::snake::{Direction, Snake};
 
@@ -38,14 +40,13 @@ impl<'a> Game<'a> {
     }
 
     fn is_eligible_to_eat(&self) -> bool {
-        let rabbit = self.board.rabbit_position();
+        let rabbit = self.board.get_rabbit_position();
         let head = self.snake.get_head();
         rabbit == head
     }
 
     fn move_snake(&mut self, direction: Direction) {
         let mut head = self.snake.get_head();
-        let mut tail = self.snake.get_tail();
         match direction {
             Direction::Up => {
                 let y = head.y as i64;
@@ -81,32 +82,44 @@ impl<'a> Game<'a> {
             }
         }
         self.snake.set_head(head);
-        self.board.set_snake((head.x, head.y), (tail.x, tail.y));
+        self.board.set_snake(self.snake);
         if self.is_eligible_to_eat() {
-            // self.snake.eat();
+            self.snake.eat(self.board.get_rabbit_position());
             self.gen_rabbit()
         }
     }
 
     pub fn start_game(&mut self) {
         let mut stdout = std::io::stdout().into_raw_mode().unwrap();
-        let stdin = std::io::stdin();
-        write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+        write!(stdout, "{}{}{}", termion::clear::All, termion::cursor::Goto(1, 1), termion::cursor::Hide);
         println!("{}", self.board.echo());
         stdout.flush().unwrap();
-        for c in stdin.keys() {
+
+        let mut keys = async_stdin().keys();
+        loop {
             write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1)).unwrap();
-            let direction = match c.as_ref().unwrap() {
-                Key::Char('q') => panic!("\r\nQuit the game"),
-                Key::Up => Direction::Up,
-                Key::Down => Direction::Down,
-                Key::Right => Direction::Right,
-                Key::Left => Direction::Left,
-                _ => Direction::Left
+            let event = keys.next();
+            let mut direction = match event {
+                None => self.snake.get_direction(),
+                Some(event) => match event.unwrap() {
+                    Key::Char('q') => panic!("\r\nQuit the game"),
+                    Key::Up => Direction::Up,
+                    Key::Down => Direction::Down,
+                    Key::Right => Direction::Right,
+                    Key::Left => Direction::Left,
+                    _ => { self.snake.get_direction() }
+                }
             };
+
+            if direction.is_opposite(self.snake.get_direction()) {
+                direction = self.snake.get_direction();
+            }
+
             self.move_snake(direction);
-            println!("{}", self.board.echo());
+            self.snake.set_direction(direction);
+            write!(stdout, "{}", self.board.echo());
             stdout.flush().unwrap();
+            std::thread::sleep(time::Duration::from_millis(150));
         }
     }
 }

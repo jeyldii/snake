@@ -3,10 +3,11 @@
 use std::cmp::{max, min};
 use std::io::BufRead;
 use std::slice;
+use crate::Snake;
 use crate::game::Core;
 use crate::snake::Position;
 
-const SIZE: usize = 30;
+const SIZE: usize = 40;
 
 
 #[derive(Clone, Copy)]
@@ -63,7 +64,7 @@ impl Board {
         }
     }
 
-    pub fn rabbit_position(&self) -> Position {
+    pub fn get_rabbit_position(&self) -> Position {
         self.rabbit
     }
 
@@ -75,38 +76,51 @@ impl Board {
         }
     }
 
-    pub fn set_snake(&mut self, head: (usize, usize), tail: (usize, usize)) {
+    pub fn set_snake(&mut self, snake: &Snake) {
         self.flush();
-        self.grid[head.1][head.0] = Core::SnakeHead as u8;
-        // self.grid[tail.1][tail.0] = Core::SnakeTail as u8;
-    }
-
-    pub fn set_body(&mut self, body: &[Position]) {
+        let head = snake.get_head();
+        let body = snake.get_body();
+        self.grid[head.y][head.x] = Core::SnakeHead as u8;
         for i in body {
             self.grid[i.y][i.x] = Core::SnakeBody as u8;
         }
+        // self.grid[tail.1][tail.0] = Core::SnakeTail as u8;
     }
 
     pub fn echo(&self) -> String {
         let mut s = String::new();
+        s.push_str("#");
         for i in self.grid {
-            for j in i {
-                if j == 0 {
-                    s.push_str(" -");
-                }
-                if j == Core::Rabbit as u8 {
-                    s.push_str(" *")
-                }
-                if j == Core::SnakeHead as u8 {
-                    s.push_str("> ")
-                }
-                if j == Core::SnakeTail as u8 {
-                    s.push_str(" 0")
-                }
-            }
-            s.push_str("\r\n");
+            s.push_str("#");
         }
 
+        for i in self.grid {
+            s.push_str("#");
+            for j in i {
+                if j == 0 {
+                    s.push_str(" ");
+                }
+                if j == Core::Rabbit as u8 {
+                    s.push_str("*")
+                }
+                if j == Core::SnakeHead as u8 {
+                    s.push_str("@")
+                }
+                if j == Core::SnakeBody as u8 {
+                    s.push_str("o")
+                }
+                // if j == Core::SnakeTail as u8 {
+                //     s.push_str(" 0")
+                // }
+            }
+            s.push_str("#");
+            s.push_str("\r\n");
+        }
+        s.push_str("#");
+        s.push_str("#");
+        for i in self.grid {
+            s.push_str("#")
+        }
         s
     }
 }
