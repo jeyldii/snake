@@ -1,39 +1,8 @@
-#![feature(slice_range)]
-
-use std::cmp::{max, min};
-use std::io::BufRead;
-use std::slice;
 use crate::Snake;
 use crate::game::Core;
 use crate::snake::Position;
 
 const SIZE: usize = 40;
-
-
-#[derive(Clone, Copy)]
-pub struct Cell {
-    data: char,
-}
-
-impl Cell {
-    pub fn new(data: char) -> Self {
-        Self {
-            data
-        }
-    }
-
-    pub fn set(&mut self, data: char) {
-        self.data = data
-    }
-}
-
-impl Default for Cell {
-    fn default() -> Self {
-        Self {
-            data: '-',
-        }
-    }
-}
 
 pub struct Board {
     pub grid: [[u8; SIZE]; SIZE],
